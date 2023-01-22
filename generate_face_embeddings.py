@@ -16,11 +16,10 @@ class GenerateFaceEmbeddings:
     directory of frame files.
 
     Attributes:
-        path_to_frames: Path to video file.
-        path_to_embeddings: Frame per seconds. Ex: 10 fps = we get 10 images per 
-        second of video
-        mtcnn_model: Name of video.
-        facenet_model: 
+        path_to_frames: Path to frames for video.
+        path_to_embeddings: Path to embeddings for video.
+        mtcnn_model: Model used to crop each face from image.
+        facenet_model: Mode; used to generate a 512-d face embedding.
     """
 
     def __init__(self, path_to_frames: str):
