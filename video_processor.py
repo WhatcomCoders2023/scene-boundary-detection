@@ -14,6 +14,7 @@ class VideoProcessor:
         fps: Frame per seconds. Ex: 10 fps = we get 10 images per 
         second of video
         video_name: Name of video.
+        path_to_frame_data: Path to video's frame data.
         frame_number_to_timestamp_milliseconds: Map of frame number to timestamp 
         in milliseconds.
     """
@@ -23,6 +24,7 @@ class VideoProcessor:
         self.path_to_video_file = path_to_video_file
         self.fps = fps
         self.video_name = self._get_video_name()
+        self.path_to_frame_data = f'data/{self.video_name}/frames'
         self.frame_number_to_timestamp_milliseconds = self._get_frame_to_timestamp_milliseconds(
         )
 
@@ -67,16 +69,13 @@ class VideoProcessor:
         vidcap = cv2.VideoCapture(self.path_to_video_file)
         success, image = vidcap.read()
 
-        path_to_frame_data = f'data/{self.video_name}/frames'
-        pathlib.Path(path_to_frame_data).mkdir(parents=True, exist_ok=True)
+        pathlib.Path(self.path_to_frame_data).mkdir(parents=True, exist_ok=True)
 
         frame_number = 0
         while success:
             vidcap.set(cv2.CAP_PROP_POS_MSEC,
                        (frame_number * (1000 * (1 / self.fps))))
-            cv2.imwrite(f'{path_to_frame_data}/frame_{frame_number}.jpg', image)
+            cv2.imwrite(f'{self.path_to_frame_data}/frame_{frame_number}.jpg',
+                        image)
             success, image = vidcap.read()
             frame_number += 1
-
-
-VideoProcessor('movies/nuclearFamily.mp4', 1).video_to_frames()

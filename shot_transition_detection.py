@@ -272,11 +272,11 @@ def convert_intermediate_shot_results(
     write_shot_results(path_to_intermediate_shot_data, frame_timestamp_list)
 
 
-def read_intermediate_shot_results(path_to_intermediate_shot_data: str,
+def read_intermediate_shot_results(path_to_shot_data: str,
                                    fps: float) -> Sequence[float]:
     frame_timestamp_list = []
     shot_number = 1
-    with open(f'{path_to_intermediate_shot_data}/intermediate_result.txt') as f:
+    with open(f'{path_to_shot_data}/intermediate_result.txt') as f:
         for start_time, end_time in csv.reader(f, delimiter='\t'):
             frame_start_time = int(start_time) / fps
             frame_end_time = int(end_time) / fps
@@ -286,10 +286,10 @@ def read_intermediate_shot_results(path_to_intermediate_shot_data: str,
     return frame_timestamp_list
 
 
-def write_shot_results(path_to_intermediate_shot_data: str,
+def write_shot_results(path_to_shot_data: str,
                        frame_timestamp_list: Sequence[float]) -> None:
     header = ['shot', 'start_time', 'end_time']
-    with open(f'{path_to_intermediate_shot_data}/shots.csv', 'w') as csvfile:
+    with open(f'{path_to_shot_data}/shots.csv', 'w') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(header)
         writer.writerows(frame_timestamp_list)

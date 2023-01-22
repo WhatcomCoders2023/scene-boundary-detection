@@ -8,7 +8,7 @@ import pathlib
 import numpy as np
 import torch
 
-from typing import Sequence
+from typing import Sequence, Tuple
 
 
 class GenerateFaceEmbeddings:
@@ -56,7 +56,7 @@ class GenerateFaceEmbeddings:
     def crop_faces(
             self,
             frame_file: str,
-            required_size: tuple(int, int) = (160, 160),
+            required_size: Tuple[int, int] = (160, 160),
     ) -> Sequence[torch.Tensor]:
         """Crops all faces from a frame.
 
