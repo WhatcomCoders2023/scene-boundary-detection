@@ -1,11 +1,73 @@
-# Code repurposed from: https://github.com/HeliosZhao/Shot-Boundary-Detection
+# Class and methods for handling shot change detection in videos.
+# Shot Detection Code repurposed from: https://github.com/HeliosZhao/Shot-Boundary-Detection
 
 import cv2
 import csv
 import numpy as np
 import pathlib
+import csv
 
-from typing import Sequence
+from typing import Sequence, Mapping, Tuple
+
+
+class ShotsToFrames:
+    """ShotsToFrames maps a video data to frame data.
+
+    Attributes:
+        shots_to_timestamp: Map of shot number to start and end timestamp.
+        shots_to_frames: Map of shot number to list of frames.
+        shots_to_frames: Path to people id in video's frame.
+    """
+
+    def __init__(
+        self,
+        path_to_shot_data: str,
+        frames_to_timestamp: Mapping[int, float],
+    ):
+        self.frames_to_timestamp = frames_to_timestamp
+        self.shots_to_timestamp = self._create_shots_to_timestamp(
+            path_to_shot_data)
+        self.shots_to_frames = self._create_shots_to_frames()
+
+    def _create_shots_to_timestamp(
+        self,
+        path_to_shot_data: str,
+    ) -> Mapping[int, Tuple[float, float]]:
+        """Creates a map of shot number to its timestamp.
+
+        Attributes:
+            path_to_shot_data: Path to a video's shot changes data.
+        
+        Return:
+            Map of shot number to timestamp, defined as a tuple 
+            corresponding to (start_time, end_time).
+        """
+        shots_to_timestamp = {}
+        with open(path_to_shot_data) as csvfile:
+            reader = csv.reader(csvfile)
+            next(reader, None)
+            for row in reader:
+                shot_number = int(row[0])
+                start_time, end_time = float(row[1]), float(row[2])
+                shots_to_timestamp[shot_number] = (start_time, end_time)
+        return shots_to_timestamp
+
+    def _create_shots_to_frames(self) -> Mapping[int, Sequence[int]]:
+        """Create a map of shot number to list of frames.
+
+        Return:
+            Map of shot number to list of frames in shot.
+        """
+        shots_to_frames = {}
+        frame_number = 0
+        for shot_number, (start_time,
+                          end_time) in self.shots_to_timestamp.items():
+            shots_to_frames[shot_number] = []
+            while frame_number in self.frames_to_timestamp and end_time * 1000 > self.frames_to_timestamp[
+                    frame_number]:
+                shots_to_frames[shot_number].append(frame_number)
+                frame_number += 1
+        return shots_to_frames
 
 
 class Frame:
@@ -263,7 +325,17 @@ def shot_transition_detection(videopath: str, output_path_to_shots: str):
 
 
 def convert_intermediate_shot_results(
-        path_to_video: str, path_to_intermediate_shot_data: str) -> None:
+    path_to_video: str,
+    path_to_intermediate_shot_data: str,
+) -> None:
+    """Converts heuristic shot detection output to csv file and 
+    writes to output path.
+
+    Attributes:
+        path_to_video: Path to a video file.
+        path_to_intermediate_shot_data: Output Path to a video's 
+        shot data directory.
+    """
     vidcap = cv2.VideoCapture(path_to_video)
     fps = vidcap.get(cv2.CAP_PROP_FPS)
 
@@ -272,24 +344,44 @@ def convert_intermediate_shot_results(
     write_shot_results(path_to_intermediate_shot_data, frame_timestamp_list)
 
 
-def read_intermediate_shot_results(path_to_shot_data: str,
-                                   fps: float) -> Sequence[float]:
-    frame_timestamp_list = []
+def read_intermediate_shot_results(
+    path_to_shot_data: str,
+    fps: float,
+) -> Sequence[float]:
+    """Read shot detection output and create list each shots timestamp.
+
+    Attributes:
+        path_to_shot_data: Path to a video's shot data directory.
+        fps: Frame per seconds.
+        
+    Return:
+        List of each shots timestamp from start_time to end_time.    
+    """
+    shot_timestamps = []
     shot_number = 1
     with open(f'{path_to_shot_data}/intermediate_result.txt') as f:
         for start_time, end_time in csv.reader(f, delimiter='\t'):
             frame_start_time = int(start_time) / fps
             frame_end_time = int(end_time) / fps
-            frame_timestamp_list.append(
+            shot_timestamps.append(
                 [shot_number, frame_start_time, frame_end_time])
             shot_number += 1
-    return frame_timestamp_list
+    return shot_timestamps
 
 
-def write_shot_results(path_to_shot_data: str,
-                       frame_timestamp_list: Sequence[float]) -> None:
+def write_shot_results(
+    path_to_shot_data: str,
+    shot_timestamps: Sequence[float],
+) -> None:
+    """Write shot change results to output path.
+
+    Attributes:
+        path_to_shot_data: Output path to a video's shot data directory.
+        shot_timestamps: List of each shots timestamp from start_time to 
+        end_time.
+    """
     header = ['shot', 'start_time', 'end_time']
     with open(f'{path_to_shot_data}/shots.csv', 'w') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(header)
-        writer.writerows(frame_timestamp_list)
+        writer.writerows(shot_timestamps)
